@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<!-- <context:property-placeholder location="classpath:config-bravo.properties"/> -->
+	<context:property-placeholder
+		location="classpath:config-${spring.profiles.active}.properties" />
+	<!-- <context:property-placeholder location="classpath:config-uat.properties"/> -->
+	<bean id="realTimeService" class="com.clt.framework.vmt.service.RealTimeService">
+		<property name="host" value="${IpNodeJs}"></property>
+	</bean>
+	
+	<bean class="com.clt.framework.vmt.controllers.BaseController" />
+
+	<bean id="errorController" class="com.clt.framework.vmt.controllers.ErrorController">
+
+	</bean>
+	<bean id="loginControllerBean" class="com.clt.framework.vmt.controllers.LoginController">
+		<property name="versionNumber" value="${Version}" />
+		<property name="userService" ref="hessianUserBean" />
+		<property name="ttnoMappingService" ref="ttnoMapingService" />
+	</bean>
+</beans>

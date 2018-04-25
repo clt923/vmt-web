@@ -1,0 +1,12 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean id="login" class="org.springframework.web.servlet.view.JstlView">
+		<property name="url" value="/WEB-INF/views/login/index.jsp" />
+	</bean>
+	<bean id="errorPage" class="org.springframework.web.servlet.view.JstlView">
+		<property name="url" value="/WEB-INF/views/error/errorPage.jsp" />
+	</bean>
+</beans>

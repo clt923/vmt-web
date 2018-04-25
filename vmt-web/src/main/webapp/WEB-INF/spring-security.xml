@@ -1,0 +1,130 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:annotation-config />
+	<context:property-placeholder	location="classpath:config-${spring.profiles.active}.properties" />
+	<!-- <context:property-placeholder location="classpath:config-uat.properties"/> -->
+	<beans:bean id="ttnoMapingService"	class="com.clt.framework.vmt.service.TTNoStoreService" />
+	<beans:bean id="logService"	class="com.clt.framework.vmt.service.LogService" />
+	
+	<beans:bean id="messageCodeHanlde"
+		class="com.clt.framework.vmt.service.MessageCodeImp" />
+	<beans:bean id="hessianUserBean"
+		class="com.clt.framework.vmt.service.HessianUserService">
+		<beans:constructor-arg name="ipHessian" value="${IpHessian}" />
+	</beans:bean>
+	<beans:bean id="messageErrorCodeHandel"
+		class="com.clt.framework.vmt.service.MessageCodeImp" />
+
+	<beans:bean id="sessionRegistry"
+		class="org.springframework.security.core.session.SessionRegistryImpl" />
+	<beans:bean id="exUsrPwdAuthFilter"
+		class="com.clt.framework.vmt.security.ExUsernamePasswordAuthenticationFilter">
+		<beans:property name="authenticationManager" ref="authenticationManager" />
+		<beans:property name="usernameParameter" value="username"></beans:property>
+		<beans:property name="passwordParameter" value="password"></beans:property>
+		<beans:property name="sessionAuthenticationStrategy"
+			ref="sas"></beans:property>
+		<beans:property name="authenticationFailureHandler"
+			ref="customAuthenticationFailureHandler"></beans:property>
+		<beans:property name="authenticationSuccessHandler"
+			ref="customAuthenticationSuccessHandler"></beans:property>
+		<beans:property name="userService" ref="hessianUserBean"></beans:property>
+	</beans:bean>
+
+	<beans:bean id="authUserDetailsService"
+		class="com.clt.framework.vmt.security.AuthUserDetailsService">
+		<beans:property name="userService" ref="hessianUserBean" />
+		<beans:property name="messgeSource" ref="messageSource" />
+		<beans:property name="passwordMonitoring" value="${monitoring.ACS}" />
+	</beans:bean>
+
+	<beans:bean id="customAuthenticationSuccessHandler"
+		class="com.clt.framework.vmt.security.CustomAuthenticationSuccessHandler">
+		<beans:property name="ttnoMappingService" ref="ttnoMapingService" />
+		<beans:property name="redirectPageDamge"
+			value="${configRule.DirectPageDamgeCode}" />
+	</beans:bean>
+
+	<beans:bean id="authenticationEntryPoint"
+		class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+		<beans:constructor-arg name="loginFormUrl"
+			value="/login"></beans:constructor-arg>
+	</beans:bean>
+	
+	<beans:bean id="customAuthenticationFailureHandler"
+		class="com.clt.framework.vmt.security.CustomAuthenticationFailureHandler">
+	</beans:bean>
+
+	<beans:bean id="sas"
+		class="org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy">
+		<beans:constructor-arg>
+			<beans:list>
+				<beans:bean
+					class="org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy">
+					<beans:constructor-arg ref="sessionRegistry" />
+					<beans:property name="maximumSessions" value="1" />
+				</beans:bean>
+				<beans:bean
+					class="org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy" />
+				<beans:bean
+					class="org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy">
+					<beans:constructor-arg ref="sessionRegistry" />
+				</beans:bean>
+			</beans:list>
+		</beans:constructor-arg>
+	</beans:bean>
+
+	<beans:bean id="concurrencyFilter"
+		class="org.springframework.security.web.session.ConcurrentSessionFilter">
+		<beans:constructor-arg name="sessionRegistry"
+			ref="sessionRegistry"></beans:constructor-arg>
+		<beans:constructor-arg name="expiredUrl" value="/login"></beans:constructor-arg>
+	</beans:bean>
+
+	<beans:bean id="authenticationProvider"
+		class="com.clt.framework.vmt.security.CustomDaoAuthenticationProvider">
+		<beans:property name="userDetailsService" ref="authUserDetailsService" />
+	</beans:bean>
+	<beans:bean id="customLogoutSuccessHandler"
+		class="com.clt.framework.vmt.security.CustomLogoutSuccessHandler">
+		<beans:property name="userService" ref="hessianUserBean" />
+	</beans:bean>
+
+	<http auto-config="false" use-expressions="true"
+		entry-point-ref="authenticationEntryPoint">
+		<intercept-url pattern="/login" access="permitAll" />
+		<intercept-url pattern="/download.do" access="permitAll" />
+		<intercept-url pattern="/getTimeFromServer" access="permitAll" />
+		<intercept-url pattern="/logutuserDuplicator" access="permitAll" />
+		<intercept-url pattern="/checkForceLogout" access="permitAll" />
+		<intercept-url pattern="/getUserGroup" access="permitAll" />
+		<intercept-url pattern="/resources/**" access="permitAll" />
+		<intercept-url pattern="/reloadJobListNew" access="permitAll" />
+		<intercept-url pattern="/errors" access="permitAll" />
+		<intercept-url pattern="/**" access="isAuthenticated()" />
+		<custom-filter ref="exUsrPwdAuthFilter" position="FORM_LOGIN_FILTER" />
+		<custom-filter ref="concurrencyFilter" position="CONCURRENT_SESSION_FILTER" />
+		<session-management
+			session-authentication-strategy-ref="sas">
+		</session-management>
+		<logout logout-url="/logout" success-handler-ref="customLogoutSuccessHandler" />
+		<csrf disabled="true" />
+		<headers>
+			<frame-options disabled="true" />
+			<cache-control disabled="true"/>
+		</headers>
+	</http>
+
+	<authentication-manager id="authenticationManager">
+		<authentication-provider ref="authenticationProvider" />
+	</authentication-manager>
+	
+</beans:beans>
